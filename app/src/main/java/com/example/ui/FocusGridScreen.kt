@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,8 +30,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.example.data.FocusTarget
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -149,25 +153,41 @@ fun FocusGridScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                // Number of days remaining
-                                Text(
-                                    text = item.daysRemaining.toString(),
-                                    color = if (item.daysRemaining > 0) accentColor else Color.Gray,
-                                    fontSize = 44.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = (-1.5).sp
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                // Title below
-                                Text(
-                                    text = item.title.uppercase(),
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center
-                                )
+                                // Number of days remaining with dim text beside it
+                                Row(
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = item.daysRemaining.toString(),
+                                        color = if (item.daysRemaining > 0) accentColor else Color.Gray,
+                                        fontSize = 44.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        letterSpacing = (-1.5).sp
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "DAYS LEFT",
+                                        color = Color.Gray,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    )
+                                }
+
+                                if (!item.isDefault) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    // Title below
+                                    Text(
+                                        text = item.title.uppercase(),
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                         }
                     }
@@ -190,36 +210,28 @@ fun FocusGridScreen(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Custom High-Contrast Toggle Switch Row
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                // Custom High-Contrast Toggle Switch Row (only the switch pill, no 'Months' text)
+                Box(
                     modifier = Modifier
                         .background(Color(0xFF161616), RoundedCornerShape(8.dp))
                         .clickable { showMonthDivision = !showMonthDivision }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                         .testTag("month_toggle_button")
                 ) {
-                    Text(
-                        text = "Months",
-                        color = if (showMonthDivision) Color.White else Color.DarkGray,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
                     Box(
                         modifier = Modifier
-                            .size(width = 24.dp, height = 12.dp)
+                            .size(width = 32.dp, height = 16.dp)
                             .background(
-                                color = if (showMonthDivision) Color(0xFF26A641) else Color(0xFF333333),
-                                shape = RoundedCornerShape(6.dp)
+                                color = if (showMonthDivision) Color(0xFF00E5FF) else Color(0xFF333333),
+                                shape = RoundedCornerShape(8.dp)
                             )
                             .padding(2.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .align(if (showMonthDivision) Alignment.CenterEnd else Alignment.CenterStart)
-                                .size(8.dp)
-                                .background(Color.White, RoundedCornerShape(4.dp))
+                                .size(12.dp)
+                                .background(Color.White, RoundedCornerShape(6.dp))
                         )
                     }
                 }
@@ -246,7 +258,7 @@ fun FocusGridScreen(
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().testTag("months_grid_view"),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(bottom = 24.dp)
                     ) {
                         monthsList.forEach { monthSection ->
@@ -261,20 +273,23 @@ fun FocusGridScreen(
                                 )
                             }
 
-                            val chunkedRows = monthSection.days.chunked(10)
+                            // Calculate month grid items with offset for 7 weekday columns
+                            val firstDayOfMonth = monthSection.days.first()
+                            val offset = (firstDayOfMonth.dayOfWeek.value % 7)
+                            val monthGridItems = List<LocalDate?>(offset) { null } + monthSection.days
+                            val chunkedRows = monthGridItems.chunked(7)
 
                             items(chunkedRows) { rowItems ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                    horizontalArrangement = Arrangement.Center
                                 ) {
-                                    for (col in 0 until 10) {
+                                    for (col in 0 until 7) {
                                         val day = rowItems.getOrNull(col)
                                         Box(
                                             modifier = Modifier
-                                                .weight(1f)
-                                                .aspectRatio(1f)
-                                                .padding(1.dp)
+                                                .padding(1.5.dp)
+                                                .size(9.dp)
                                         ) {
                                             if (day != null) {
                                                 DayBox(
@@ -285,8 +300,6 @@ fun FocusGridScreen(
                                                         val target = targetsByDate[day.toString()]
                                                         if (target != null) {
                                                             selectedTargetDetail = target
-                                                        } else {
-                                                            showDayToast(context, day, today)
                                                         }
                                                     }
                                                 )
@@ -300,15 +313,19 @@ fun FocusGridScreen(
                         }
                     }
                 } else {
-                    // Continuous Year Flow Grid - 20 columns for high density (all boxes visible at once)
+                    // Continuous Year Flow Grid - 7 columns representing weekdays
                     val startOfYear = remember { LocalDate.of(currentYear, 1, 1) }
                     val daysInYear = remember(startOfYear) { if (startOfYear.isLeapYear) 366 else 365 }
                     val allDays = remember(startOfYear, daysInYear) {
                         (0 until daysInYear).map { startOfYear.plusDays(it.toLong()) }
                     }
 
-                    val chunkedRows = remember(allDays) {
-                        allDays.chunked(20)
+                    val startOffset = (startOfYear.dayOfWeek.value % 7)
+                    val continuousGridItems = remember(allDays, startOffset) {
+                        List<LocalDate?>(startOffset) { null } + allDays
+                    }
+                    val chunkedRows = remember(continuousGridItems) {
+                        continuousGridItems.chunked(7)
                     }
 
                     LazyColumn(
@@ -319,15 +336,14 @@ fun FocusGridScreen(
                         items(chunkedRows) { rowItems ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                for (col in 0 until 20) {
+                                for (col in 0 until 7) {
                                     val day = rowItems.getOrNull(col)
                                     Box(
                                         modifier = Modifier
-                                            .weight(1f)
-                                            .aspectRatio(1f)
-                                            .padding(1.dp)
+                                            .padding(1.5.dp)
+                                            .size(9.dp)
                                     ) {
                                         if (day != null) {
                                             DayBox(
@@ -338,8 +354,6 @@ fun FocusGridScreen(
                                                     val target = targetsByDate[day.toString()]
                                                     if (target != null) {
                                                         selectedTargetDetail = target
-                                                    } else {
-                                                        showDayToast(context, day, today)
                                                     }
                                                 }
                                             )
@@ -398,51 +412,85 @@ fun DayBox(
     associatedTarget: FocusTarget?,
     onClick: () -> Unit
 ) {
+    var showTooltip by remember { mutableStateOf(false) }
     val isPast = day.isBefore(today)
     val isToday = day.isEqual(today)
     val isFuture = day.isAfter(today)
 
     val baseModifier = Modifier
         .fillMaxSize()
-        .clip(RoundedCornerShape(4.dp))
-        .clickable(onClick = onClick)
+        .clip(RoundedCornerShape(2.dp))
+        .clickable {
+            showTooltip = true
+            onClick()
+        }
 
-    when {
-        isPast -> {
-            // Days of the past are green
-            Box(
-                modifier = baseModifier
-                    .background(Color(0xFF2E7D32)) // High-contrast forest green
-                    .testTag("day_box_past")
-            )
-        }
-        isToday -> {
-            // Current date is highlighted differently
-            Box(
-                modifier = baseModifier
-                    .background(Color(0xFF00E5FF)) // Glowing bright cyan/neon blue
-                    .border(width = 1.5.dp, color = Color.White, shape = RoundedCornerShape(4.dp))
-                    .testTag("day_box_today")
-            )
-        }
-        isFuture -> {
-            if (associatedTarget != null) {
-                // Future target day gets a highlighted border of its custom color
-                val borderCol = parseHexColor(associatedTarget.colorHex)
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            isPast -> {
+                // Past days are vibrant neon green
                 Box(
                     modifier = baseModifier
-                        .background(Color(0xFF121212))
-                        .border(width = 2.dp, color = borderCol, shape = RoundedCornerShape(4.dp))
-                        .testTag("day_box_target")
+                        .background(Color(0xFF00FF66))
+                        .testTag("day_box_past")
                 )
-            } else {
-                // Standard future day is blank/hollow
+            }
+            isToday -> {
+                // Today is neon cyan with a white edge highlight
                 Box(
                     modifier = baseModifier
-                        .background(Color(0xFF141414))
-                        .border(width = 1.dp, color = Color(0xFF242424), shape = RoundedCornerShape(4.dp))
-                        .testTag("day_box_future")
+                        .background(Color(0xFF00E5FF))
+                        .border(width = 1.dp, color = Color.White, shape = RoundedCornerShape(2.dp))
+                        .testTag("day_box_today")
                 )
+            }
+            isFuture -> {
+                if (associatedTarget != null) {
+                    // Future target day gets a highlighted neon border of its custom color
+                    val borderCol = parseHexColor(associatedTarget.colorHex)
+                    Box(
+                        modifier = baseModifier
+                            .background(Color(0xFF0A0A0A))
+                            .border(width = 1.5.dp, color = borderCol, shape = RoundedCornerShape(2.dp))
+                            .testTag("day_box_target")
+                    )
+                } else {
+                    // Standard future day is blank/hollow
+                    Box(
+                        modifier = baseModifier
+                            .background(Color(0xFF0F0F0F))
+                            .border(width = 0.8.dp, color = Color(0xFF222222), shape = RoundedCornerShape(2.dp))
+                            .testTag("day_box_future")
+                    )
+                }
+            }
+        }
+
+        if (showTooltip) {
+            val weekdayName = remember(day) { day.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.ENGLISH) }
+            val monthName = remember(day) { day.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.ENGLISH) }
+            val tooltipText = "$weekdayName, ${day.dayOfMonth} $monthName"
+
+            Popup(
+                alignment = Alignment.TopCenter,
+                offset = IntOffset(0, -90), // Display nicely floating above the box
+                onDismissRequest = { showTooltip = false },
+                properties = PopupProperties(focusable = false)
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161616)),
+                    border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.8f)), // Neon cyan high-contrast border
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Text(
+                        text = tooltipText,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
         }
     }
