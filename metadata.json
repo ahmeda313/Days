@@ -1,0 +1,6 @@
+{
+  "name": "Target Days Tracker",
+  "description": "Visual portrait contribution graph and countdown metrics for upcoming focuses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

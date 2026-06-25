@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Row 1: Green Past Days -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M35,35h10v10h-10z" />
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M49,35h10v10h-10z" />
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M63,35h10v10h-10z" />
+        
+    <!-- Row 2: Green Past, Neon Cyan Today, Hollow Future -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M35,49h10v10h-10z" />
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M49,49h10v10h-10z" />
+    <path
+        android:strokeWidth="1.5"
+        android:strokeColor="#242424"
+        android:fillColor="#00000000"
+        android:pathData="M63,49h10v10h-10z" />
+        
+    <!-- Row 3: Hollow Future, Neon Red Target, Hollow Future -->
+    <path
+        android:strokeWidth="1.5"
+        android:strokeColor="#242424"
+        android:fillColor="#00000000"
+        android:pathData="M35,63h10v10h-10z" />
+    <path
+        android:strokeWidth="2"
+        android:strokeColor="#FF3366"
+        android:fillColor="#121212"
+        android:pathData="M49,63h10v10h-10z" />
+    <path
+        android:strokeWidth="1.5"
+        android:strokeColor="#242424"
+        android:fillColor="#00000000"
+        android:pathData="M63,63h10v10h-10z" />
+        
+</vector>
